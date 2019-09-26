@@ -41,6 +41,9 @@ import io.spring2go.zuul.monitoring.TracerFactory;
 import io.spring2go.zuul.util.IPUtil;
 import io.spring2go.tools.InfoBoard;
 
+/**
+ * 在网关启动时候 通过这个监听器 预加载一些模块
+ */
 public class InitializeServletListener implements ServletContextListener {
 
 	private Logger LOGGER = LoggerFactory.getLogger(InitializeServletListener.class);
@@ -63,16 +66,32 @@ public class InitializeServletListener implements ServletContextListener {
 		
         loadConfiguration();
         configLog();
-        registerEureka();
+		/**
+		 * 生产环境的 zuul 会注册在 Eureka 上 ，这样 histrix 还有 。。。
+		 *
+		 */
+		registerEureka();
 	}
 
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
         try {
-        	initInfoBoard();
+			/**
+			 * 查看内部状态
+			 */
+			initInfoBoard();
+			/**
+			 * zuul 内部的埋点监控
+			 */
             initMonitor();
-            initZuul();
-            updateInstanceStatusToEureka();
+			/**
+			 * 初始化zuul
+			 */
+			initZuul();
+			/**
+			 * 这里先不启用
+			 */
+			updateInstanceStatusToEureka();
         } catch (Exception e) {
         	LOGGER.error("Error while initializing zuul gateway.", e);
         	throw new RuntimeException(e);
@@ -118,21 +137,38 @@ public class InitializeServletListener implements ServletContextListener {
     private void initZuul() throws Exception {
         LOGGER.info("Starting Groovy Filter file manager");
         final AbstractConfiguration config = ConfigurationManager.getConfigInstance();
-        final String preFiltersPath = config.getString(Constants.ZUUL_FILTER_PRE_PATH);
+		/**
+		 * 找到 preFiltersPath postFiltersPath routeFiltersPath errorFiltersPath customPath
+		 * 这些 path 都已经在 mobile_zuul.properties 由我们自己定义好了
+		 */
+		final String preFiltersPath = config.getString(Constants.ZUUL_FILTER_PRE_PATH);
         final String postFiltersPath = config.getString(Constants.ZUUL_FILTER_POST_PATH);
         final String routeFiltersPath = config.getString(Constants.ZUUL_FILTER_ROUTE_PATH);
         final String errorFiltersPath = config.getString(Constants.ZUUL_FILTER_ERROR_PATH);
         final String customPath = config.getString(Constants.Zuul_FILTER_CUSTOM_PATH);
 
-        //load local filter files
+		/**
+		 * 加载 Groovy 编译器， 因为我们的 filter 使用Groovy编写
+		 */
+		//load local filter files
         FilterLoader.getInstance().setCompiler(new GroovyCompiler());
-        FilterFileManager.setFilenameFilter(new GroovyFileFilter());
+		/**
+		 * FilterFileManager
+		 *
+		 * FilterFileManager 需要知道 FileDirectory （preFiltersPath，postFiltersPath，routeFiltersPath，errorFiltersPath，customPath）
+		 *
+		 */
+		FilterFileManager.setFilenameFilter(new GroovyFileFilter());
         if (customPath == null) {
             FilterFileManager.init(5, preFiltersPath, postFiltersPath, routeFiltersPath, errorFiltersPath);
         } else {
             FilterFileManager.init(5, preFiltersPath, postFiltersPath, routeFiltersPath, errorFiltersPath, customPath);
         }
         //load filters in DB
+		/**
+		 * FilterPoller 定期去数据库（Filter Persister）抓 状态变化的 filter，
+		 * 抓到之后 存放到 Filter Directory 中
+		 */
         startZuulFilterPoller();
         LOGGER.info("Groovy Filter file manager started");
     }

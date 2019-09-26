@@ -31,7 +31,9 @@ public class FilterLoader {
    
     private static IDynamicCodeCompiler COMPILER;
     private static IFilterFactory FILTER_FACTORY = new DefaultFilterFactory();
-    
+    /**
+     * 内存中 过滤器的 一个存储机制
+     */
     private FilterRegistry filterRegistry = FilterRegistry.instance();
     private final ConcurrentHashMap<String, Long> filterClassLastModified = new ConcurrentHashMap<String, Long>();
     private final ConcurrentHashMap<String, String> filterClassCode = new ConcurrentHashMap<String, String>();
@@ -142,11 +144,21 @@ public class FilterLoader {
             LOGGER.debug("reloading filter " + sName);
             filterRegistry.remove(sName);
         }
+
         ZuulFilter filter = filterRegistry.get(sName);
         if (filter == null) {
+            /**
+             * 编译filter文件，拿到 对应的 Class 对象
+             */
             Class clazz = COMPILER.compile(file);
             if (!Modifier.isAbstract(clazz.getModifiers())) {
+                /**
+                 * 通过Class 对象 ，newInstance 出 filter实例
+                 */
                 filter = (ZuulFilter) FILTER_FACTORY.newInstance(clazz);
+                /**
+                 * 将filter实例 存储到filterRegistry 中   （存到这里，以后 Zuul Filter Runner 就可以直接拿过去运行了 ）
+                 */
                 filterRegistry.put(file.getAbsolutePath() + file.getName(), filter);
                 filterClassLastModified.put(sName, file.lastModified());
                 List<ZuulFilter> list = hashFiltersByType.get(filter.filterType());

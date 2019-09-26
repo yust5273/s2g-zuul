@@ -136,10 +136,16 @@ public class FilterProcessor {
 			Debug.addRoutingDebug("Invoking {" + sType + "} type filters");
 		}
 		boolean bResult = false;
+		/**
+		 * 通过 filter loader 把 pre类型的 filter 都抓出来 （内部已经根据 优先级排序了）
+		 */
 		List<ZuulFilter> list = FilterLoader.getInstance().getFiltersByType(sType);
 		if (list != null) {
 			for (int i = 0; i < list.size(); i++) {
 				ZuulFilter zuulFilter = list.get(i);
+				/**
+				 * 依次处理filter中的过滤器
+				 */
 				Object result = processZuulFilter(zuulFilter);
 				if (result != null && result instanceof Boolean) {
 					bResult |= ((Boolean) result);
@@ -177,6 +183,9 @@ public class FilterProcessor {
 				copy = ctx.copy();
 			}
 
+			/**
+			 * 运行 filter
+			 */
 			ZuulFilterResult result = filter.runFilter();
 			ExecutionStatus s = result.getStatus();
 			execTime = System.currentTimeMillis() - ltime;

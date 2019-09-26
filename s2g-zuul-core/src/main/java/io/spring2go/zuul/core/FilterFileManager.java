@@ -63,10 +63,15 @@ public class FilterFileManager {
 	public static void init(int pollingIntervalSeconds, String... directories)
 			throws Exception, IllegalAccessException, InstantiationException {
 		getInstance();
-
+		/**
+		 * 设置filter目录
+		 */
 		instance.aDirectories = directories;
 		instance.pollingIntervalSeconds = pollingIntervalSeconds;
 		instance.manageFiles();
+		/**
+		 * 启动一个Poller ，Poller 是一个线程 去管理文件 ，， 定期扫描 抓取文件 ，， 最终加载到 FilterLoader 组件中
+		 */
 		instance.startPoller();
 	}
 

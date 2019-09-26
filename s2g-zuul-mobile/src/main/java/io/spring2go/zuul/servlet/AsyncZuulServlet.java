@@ -27,6 +27,9 @@ import io.spring2go.zuul.common.Constants;
 import io.spring2go.zuul.core.ZuulCallable;
 import io.spring2go.zuul.core.ZuulRunner;
 
+/**
+ * 异步模式启动 zuul  （波波老师自己定制的 ）  并不完全异步
+ */
 public class AsyncZuulServlet extends HttpServlet {
 	private static final long serialVersionUID = 2723461074152665339L;
 

@@ -57,8 +57,14 @@ public class ZuulFilterPoller {
 		public void run() {
 			while (running) {
 				try {
+					/**
+					 * 未启用状态
+					 */
 					if (!pollerEnabled.get())
 						continue;
+					/**
+					 * 金丝雀状态，， 抓金丝雀的过滤器
+					 */
 					if (canary.get()) {
 						Transaction tran = Cat.getProducer().newTransaction("FilterPoller", "canary-"+ZuulFilterDaoFactory.getCurrentType());
 						
@@ -90,16 +96,25 @@ public class ZuulFilterPoller {
 						}finally{
 							tran.complete();
 						}
+						/**
+						 *
+						 */
 					} else if (active.get()) {
 						Transaction tran = Cat.getProducer().newTransaction("FilterPoller", "active-"+ZuulFilterDaoFactory.getCurrentType());
 						
 						try{
+							/**
+							 * 拿到过滤器
+							 */
 							List<FilterInfo> newFilters = ZuulFilterDaoFactory.getZuulFilterDao().getAllActiveFilters();
 							
 							tran.setStatus(Transaction.SUCCESS);
 							if (newFilters.isEmpty())
 								continue;
 							for (FilterInfo newFilter : newFilters) {
+								/**
+								 * check 一下
+								 */
 								doFilterCheck(newFilter);
 							}
 						}catch(Throwable t){
@@ -146,9 +161,15 @@ public class ZuulFilterPoller {
 		this.running = false;
 	}
 	private void doFilterCheck(FilterInfo newFilter) throws IOException {
+		/**
+		 * 通过 runningFilters去 找到过滤器的信息
+		 */
 		FilterInfo existFilter = runningFilters.get(newFilter.getFilterId());
 		if (existFilter == null || !existFilter.equals(newFilter)) {
 			LOGGER.info("adding filter to disk" + newFilter.toString());
+			/**
+			 * 存到本地磁盘文件
+			 */
 			writeFilterToDisk(newFilter);
 			runningFilters.put(newFilter.getFilterId(), newFilter);
 		}

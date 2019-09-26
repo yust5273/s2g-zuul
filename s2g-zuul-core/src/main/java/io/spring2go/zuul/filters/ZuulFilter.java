@@ -93,6 +93,9 @@ public abstract class ZuulFilter implements IZuulFilter, Comparable<ZuulFilter> 
 		if (!filterDisabled.get()) {		    
 			if (shouldFilter()) {
 				try {
+					/**
+					 * 这个run就是执行 过滤器关键概念 中的Action的
+					 */
 					Object res = run();
 					tr.setStatus(ExecutionStatus.SUCCESS);
 					tr.setResult(res);

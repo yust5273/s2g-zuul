@@ -12,12 +12,18 @@ import io.spring2go.zuul.common.ZuulException;
 import io.spring2go.zuul.context.RequestContext;
 import io.spring2go.zuul.core.ZuulRunner;
 
+/**
+ * 同步模式启动 zuul
+ */
 public class SyncZuulServlet extends HttpServlet {
 	
 	private static final long serialVersionUID = -7314825620092836092L;
 
 	private static Logger LOGGER = LoggerFactory.getLogger(SyncZuulServlet.class);
-	
+
+    /**
+     * ZuulRunner 是一个 封装类  （wrapper） 内部封装了FilterProcessor
+     */
     private ZuulRunner zuulRunner = new ZuulRunner();
 
     @Override
@@ -31,7 +37,13 @@ public class SyncZuulServlet extends HttpServlet {
             // explicitly bound in web.xml, for which requests will not have the same data attached
             RequestContext.getCurrentContext().setZuulEngineRan();
 
+            /**
+             * 对应我们架构图的 运行时模块
+             */
             try {
+                /**
+                 * 运行前置过滤器
+                 */
                 preRoute();
             } catch (ZuulException e) {
                 error(e);
@@ -39,6 +51,9 @@ public class SyncZuulServlet extends HttpServlet {
                 return;
             }
             try {
+                /**
+                 * 运行 过滤器
+                 */
                 route();
             } catch (ZuulException e) {
                 error(e);
@@ -46,6 +61,9 @@ public class SyncZuulServlet extends HttpServlet {
                 return;
             }
             try {
+                /**
+                 * 运行后置过滤器
+                 */
                 postRoute();
             } catch (ZuulException e) {
                 error(e);
@@ -83,6 +101,9 @@ public class SyncZuulServlet extends HttpServlet {
      * @throws ZuulException
      */
     void preRoute() throws ZuulException {
+        /**
+         * 架构图中的 zuul Filter Runner
+         */
     	zuulRunner.preRoute();
     }
 
